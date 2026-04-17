@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEC McKinney-Vento Regional Dashboard — Students Experiencing Homelessness</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --blue-50: #E6F1FB;
+    --blue-200: #85B7EB;
+    --blue-400: #378ADD;
+    --blue-600: #185FA5;
+    --blue-800: #0C447C;
+    --blue-900: #042C53;
+    --amber-50: #FAEEDA;
+    --amber-400: #EF9F27;
+    --amber-600: #854F0B;
+    --amber-800: #633806;
+    --green-50: #EAF3DE;
+    --green-800: #27500A;
+    --red-50: #FCEBEB;
+    --red-600: #A32D2D;
+    --red-800: #791F1F;
+    --gray-50: #F1EFE8;
+    --gray-100: #D3D1C7;
+    --gray-400: #888780;
+    --gray-600: #5F5E5A;
+    --gray-800: #444441;
+    --coral-600: #854F0B;
+    --bg: #ffffff;
+    --bg-secondary: #F7F7F5;
+    --text-primary: #1a1a18;
+    --text-secondary: #5F5E5A;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.22);
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F4F3EF;
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .page-wrap {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── Page header ── */
+  .page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 0.5px solid var(--border-strong);
+  }
+
+  .page-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--blue-600);
+    margin-bottom: 6px;
+  }
+
+  .page-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+
+  .page-sub {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+
+  .page-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .meta-chip {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 0.5px solid var(--border-strong);
+    color: var(--text-secondary);
+    background: var(--bg);
+  }
+
+  .meta-chip.prelim {
+    background: var(--amber-50);
+    color: var(--amber-800);
+    border-color: var(--amber-400);
+  }
+
+  /* ── Banner ── */
+  .banner {
+    background: var(--amber-50);
+    border: 0.5px solid var(--amber-400);
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    margin-bottom: 1.5rem;
+    font-size: 13px;
+    color: var(--amber-800);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .banner-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--amber-400);
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  /* ── Section labels ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    margin-top: 2rem;
+  }
+
+  /* ── Metric cards ── */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 10px;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 640px) {
+    .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  }
+
+  .metric {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+
+  .metric-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+  .metric-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px; }
+  .metric-val { font-size: 22px; font-weight: 600; color: var(--text-primary); }
+  .metric-yr { font-size: 10px; color: var(--text-tertiary); }
+  .metric-prev { font-size: 11px; color: var(--text-tertiary); }
+
+  .delta {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  .delta-up { background: var(--red-50); color: var(--red-800); }
+  .delta-dn { background: var(--green-50); color: var(--green-800); }
+  .delta-flat { background: var(--bg-secondary); color: var(--text-tertiary); }
+
+  /* ── County tabs ── */
+  .county-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 1rem;
+  }
+
+  .ctab {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-strong);
+    color: var(--text-secondary);
+    cursor: pointer;
+    background: var(--bg);
+    transition: all 0.15s;
+  }
+
+  .ctab:hover { background: var(--bg-secondary); }
+
+  .ctab.active {
+    background: var(--blue-50);
+    color: var(--blue-800);
+    border-color: var(--blue-200);
+  }
+
+  /* ── County detail card ── */
+  .county-detail {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .county-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .county-name-lg { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+  .county-sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; }
+
+  .rate-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  .rate-hi { background: var(--red-50); color: var(--red-800); }
+  .rate-mid { background: var(--amber-50); color: var(--amber-800); }
+  .rate-lo { background: var(--green-50); color: var(--green-800); }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  @media (max-width: 500px) { .compare-grid { grid-template-columns: 1fr; } }
+
+  .compare-col {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+
+  .compare-yr {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+  }
+
+  .compare-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 13px;
+  }
+
+  .compare-stat-label { color: var(--text-secondary); }
+  .compare-stat-val { font-weight: 600; color: var(--text-primary); }
+
+  .bar-section { margin-bottom: 9px; }
+
+  .bar-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .bar-track {
+    height: 7px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+
+  .bar-fill { height: 7px; border-radius: 4px; transition: width 0.4s ease; }
+  .bar-fill2 { height: 7px; border-radius: 4px; opacity: 0.35; }
+
+  .insight-box {
+    background: var(--amber-50);
+    border-left: 3px solid var(--amber-400);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    padding: 12px 16px;
+    margin-top: 14px;
+  }
+
+  .insight-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber-800);
+    margin-bottom: 6px;
+  }
+
+  .insight-text { font-size: 13px; color: var(--text-secondary); line-height: 1.65; }
+
+  /* ── Charts ── */
+  .chart-wrap { position: relative; width: 100%; height: 300px; margin-bottom: 0; }
+  .chart-wrap2 { position: relative; width: 100%; height: 260px; margin-bottom: 0; }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .chart-card-full {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .leg-item { display: flex; align-items: center; gap: 6px; }
+  .leg-sq { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Footer ── */
+  .dash-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 0.5px solid var(--border);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.7;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .footer-contact { font-size: 12px; color: var(--text-secondary); }
+  .footer-contact a { color: var(--blue-600); text-decoration: none; }
+  .footer-contact a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="page-header">
+    <div class="page-eyebrow">Heartland Educational Consortium · McKinney-Vento Program</div>
+    <div class="page-title">Students Experiencing Homelessness<br>Regional Mini Summit Dashboard</div>
+    <div class="page-sub">District-level data for DeSoto, Glades, Hardee, Hendry, Highlands, Okeechobee, Polk, Lake Wales Charter, and Charlotte Counties.</div>
+    <div class="page-meta">
+      <span class="meta-chip prelim">2025-26 Survey 3 Preliminary — as of 04/05/2026</span>
+      <span class="meta-chip">Compared to 2023-24 Final Survey 5</span>
+      <span class="meta-chip">FDOE PERA 3356k</span>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div class="banner">
+    <div class="banner-dot"></div>
+    <div>Preliminary data reflects identification counts as of 04/05/2026. Survey 3 figures typically underrepresent final counts — use for trend analysis and early intervention, not final performance evaluation.</div>
+  </div>
+
+  <!-- Regional metrics -->
+  <div class="section-label">Regional overview — 9 districts</div>
+  <div class="metric-grid" id="reg-metrics"></div>
+
+  <!-- District selector -->
+  <div class="section-label">District detail</div>
+  <div class="county-tabs" id="ctabs"></div>
+  <div class="county-detail" id="county-detail"></div>
+
+  <!-- Comparison chart -->
+  <div class="chart-card-full">
+    <div class="section-label" style="margin-top:0;">Homeless count — 2023-24 final vs. 2025-26 preliminary</div>
+    <div class="legend">
+      <span class="leg-item"><span class="leg-sq" style="background:#185FA5;"></span>2025-26 S3 prelim</span>
+      <span class="leg-item"><span class="leg-sq" style="background:#85B7EB;"></span>2023-24 final</span>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="compareChart" role="img" aria-label="Grouped bar chart comparing total homeless students per district between 2023-24 final and 2025-26 preliminary">Homeless student count comparison 2023-24 vs 2025-26 by district.</canvas>
+    </div>
+  </div>
+
+  <!-- Rate + Status charts -->
+  <div class="two-col">
+    <div class="chart-card">
+      <div class="section-label" style="margin-top:0;">Homeless rate — 2025-26 S3</div>
+      <div class="legend">
+        <span class="leg-item"><span class="leg-sq" style="background:#185FA5;"></span>District rate</span>
+        <span class="leg-item"><span class="leg-sq" style="background:#E24B4A;"></span>FL avg 2.56%</span>
+      </div>
+      <div class="chart-wrap2">
+        <canvas id="rateChart" role="img" aria-label="Bar chart of 2025-26 homeless rate by district vs Florida average of 2.56%">2025-26 homeless rate by district.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="section-label" style="margin-top:0;">Nighttime status — 2025-26 S3</div>
+      <div class="legend">
+        <span class="leg-item"><span class="leg-sq" style="background:#185FA5;"></span>Doubling up (B)</span>
+        <span class="leg-item"><span class="leg-sq" style="background:#854F0B;"></span>Motels (E)</span>
+        <span class="leg-item"><span class="leg-sq" style="background:#BA7517;"></span>Other (D)</span>
+        <span class="leg-item"><span class="leg-sq" style="background:#888780;"></span>Shelters (A)</span>
+      </div>
+      <div class="chart-wrap2">
+        <canvas id="statusChart" role="img" aria-label="Stacked bar chart of nighttime status by district 2025-26">2025-26 nighttime status breakdown by district.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="dash-footer">
+    <div>Source: FDOE PK-12 Education Information Services · GQUT F71267 · PERA 3356k<br>Data reflects preliminary Survey 3 counts. Final figures available at Survey 5 close.</div>
+    <div class="footer-contact">
+      Ashley H.K. Gill · Regional Navigator, McKinney-Vento Program<br>
+      Heartland Educational Consortium · <a href="mailto:ashley.gill@heartlanded.org">ashley.gill@heartlanded.org</a> · 863-531-0444 ext. 10708
+    </div>
+  </div>
+
+</div>
+
+<script>
+const c2324 = [
+  { name:'DeSoto',          total:4690,   A:12,  B:48,  D:10,  E:10,  homeless:80,   uhy_c:4,   uhy_u:1  },
+  { name:'Glades',          total:2123,   A:0,   B:90,  D:9,   E:7,   homeless:106,  uhy_c:5,   uhy_u:1  },
+  { name:'Hardee',          total:5222,   A:13,  B:295, D:31,  E:4,   homeless:343,  uhy_c:7,   uhy_u:7  },
+  { name:'Hendry',          total:16087,  A:259, B:666, D:55,  E:24,  homeless:1004, uhy_c:19,  uhy_u:22 },
+  { name:'Highlands',       total:13026,  A:16,  B:422, D:10,  E:10,  homeless:458,  uhy_c:7,   uhy_u:3  },
+  { name:'Okeechobee',      total:7191,   A:8,   B:315, D:37,  E:7,   homeless:367,  uhy_c:47,  uhy_u:31 },
+  { name:'Polk',            total:122193, A:258, B:3701,D:230, E:764, homeless:4953, uhy_c:27,  uhy_u:357},
+  { name:'Lake Wales Chr.', total:5264,   A:1,   B:238, D:57,  E:19,  homeless:315,  uhy_c:20,  uhy_u:6  },
+  { name:'Charlotte',       total:18331,  A:79,  B:414, D:104, E:39,  homeless:636,  uhy_c:47,  uhy_u:21 },
+];
+
+const c2526 = [
+  { name:'DeSoto',          total:4179,  A:9,   B:78,  D:3,   E:20,  homeless:110,  uhy_c:1,   uhy_u:1  },
+  { name:'Glades',          total:1978,  A:0,   B:15,  D:9,   E:0,   homeless:24,   uhy_c:0,   uhy_u:1  },
+  { name:'Hardee',          total:4409,  A:18,  B:241, D:23,  E:0,   homeless:282,  uhy_c:12,  uhy_u:12 },
+  { name:'Hendry',          total:14447, A:396, B:318, D:20,  E:17,  homeless:751,  uhy_c:9,   uhy_u:29 },
+  { name:'Highlands',       total:11767, A:22,  B:322, D:13,  E:17,  homeless:374,  uhy_c:1,   uhy_u:33 },
+  { name:'Okeechobee',      total:5781,  A:4,   B:242, D:80,  E:3,   homeless:329,  uhy_c:33,  uhy_u:25 },
+  { name:'Polk',            total:117886,A:306, B:3001,D:366, E:410, homeless:4083, uhy_c:16,  uhy_u:201},
+  { name:'Lake Wales Chr.', total:4885,  A:12,  B:329, D:80,  E:18,  homeless:439,  uhy_c:0,   uhy_u:0  },
+  { name:'Charlotte',       total:17960, A:37,  B:266, D:13,  E:45,  homeless:361,  uhy_c:34,  uhy_u:17 },
+];
+
+const FL_RATE_2526 = (72988/2851130*100);
+
+function fmt(n) { return n.toLocaleString(); }
+function deltaClass(d) { if(d>0) return 'delta-up'; if(d<0) return 'delta-dn'; return 'delta-flat'; }
+function deltaText(n,o) { const d=n-o; if(d===0) return '—'; return (d>0?'+':'')+d.toLocaleString(); }
+function rateClass(r) { if(r>=6) return 'rate-hi'; if(r>=3) return 'rate-mid'; return 'rate-lo'; }
+
+function buildMetrics() {
+  const totH26=c2526.reduce((s,c)=>s+c.homeless,0);
+  const totH24=c2324.reduce((s,c)=>s+c.homeless,0);
+  const totE26=c2526.reduce((s,c)=>s+c.total,0);
+  const totE24=c2324.reduce((s,c)=>s+c.total,0);
+  const totB26=c2526.reduce((s,c)=>s+c.B,0);
+  const totB24=c2324.reduce((s,c)=>s+c.B,0);
+  const totU26=c2526.reduce((s,c)=>s+c.uhy_c+c.uhy_u,0);
+  const totU24=c2324.reduce((s,c)=>s+c.uhy_c+c.uhy_u,0);
+  const r26=(totH26/totE26*100), r24=(totH24/totE24*100);
+  const items=[
+    {label:'Total homeless students',v26:fmt(totH26),v24:fmt(totH24),d:totH26-totH24},
+    {label:'Regional homeless rate', v26:r26.toFixed(2)+'%',v24:r24.toFixed(2)+'%',dp:(r26-r24),isRate:true},
+    {label:'Doubling up (B)',        v26:fmt(totB26),v24:fmt(totB24),d:totB26-totB24},
+    {label:'Unaccompanied youth',    v26:fmt(totU26),v24:fmt(totU24),d:totU26-totU24},
+  ];
+  const wrap=document.getElementById('reg-metrics');
+  items.forEach(item=>{
+    let dTag='';
+    if(item.isRate){
+      const d=item.dp, dc=Math.abs(d)<0.01?'delta-flat':d>0?'delta-up':'delta-dn';
+      dTag=`<span class="delta ${dc}">${d===0?'—':(d>0?'+':'')+d.toFixed(2)+'pp'}</span>`;
+    } else {
+      dTag=`<span class="delta ${deltaClass(item.d)}">${item.d===0?'—':(item.d>0?'+':'')+item.d.toLocaleString()}</span>`;
+    }
+    wrap.innerHTML+=`<div class="metric">
+      <div class="metric-label">${item.label}</div>
+      <div class="metric-row"><span class="metric-val">${item.v26}</span><span class="metric-yr">25-26 S3</span>${dTag}</div>
+      <div class="metric-prev">Prior: ${item.v24} (23-24 Final)</div>
+    </div>`;
+  });
+}
+
+function insights(n,o){
+  const pctChg=((n.homeless-o.homeless)/o.homeless*100).toFixed(1);
+  const rate=(n.homeless/n.total*100);
+  const inc=n.homeless>o.homeless;
+  if(n.name==='Glades') return `Homeless count dropped sharply from ${o.homeless} to ${n.homeless} (${pctChg}%). Preliminary data — likely reflects early-year identification gaps. Audit housing questionnaire distribution at each school before Survey 5.`;
+  if(n.name==='Lake Wales Chr.') return `Jumped from ${o.homeless} to ${n.homeless} students (+${((n.homeless-o.homeless)/o.homeless*100).toFixed(0)}%). Notable increases in doubling up (B: ${o.B}→${n.B}) and Other (D: ${o.D}→${n.D}). Certified UHY dropped to 0 — review certification process with liaison.`;
+  if(n.name==='Hendry') return `Shelter placements (A) surged from ${o.A} to ${n.A} — highest in the region. Doubling-up dropped (${o.B}→${n.B}). Possible shift in housing instability patterns or shelter capacity change. Discuss with liaison.`;
+  if(n.name==='Charlotte') return `Total homeless dropped from ${o.homeless} to ${n.homeless} (${pctChg}%). Motel placements slightly up (${o.E}→${n.E}). Confirm identification procedures held steady — too sharp to accept at face value without verification.`;
+  const doubPct=n.B>0?(n.B/n.homeless*100).toFixed(0):0;
+  if(doubPct>=70) return `${doubPct}% of identified students are doubling up. ${inc?'Increase of '+pctChg+'%':'Decrease of '+Math.abs(pctChg)+'%'} from 2023-24 — ${inc?'possible identification improvement or increased instability':'verify no identification gaps exist'}.`;
+  return `${inc?'Up '+pctChg+'%':'Down '+Math.abs(pctChg)+'%'} from 2023-24 (${o.homeless}→${n.homeless}). Rate is ${rate.toFixed(2)}% vs. FL avg ${FL_RATE_2526.toFixed(2)}%. Preliminary figures may shift before Survey 5 closes.`;
+}
+
+function renderDetail(idx){
+  document.querySelectorAll('.ctab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  const n=c2526[idx], o=c2324[idx];
+  const rate=(n.homeless/n.total*100);
+  const bars=[
+    {label:'Doubling up (B)',v26:n.B,v24:o.B,color:'#185FA5'},
+    {label:'Motels (E)',     v26:n.E,v24:o.E,color:'#854F0B'},
+    {label:'Other (D)',      v26:n.D,v24:o.D,color:'#BA7517'},
+    {label:'Shelters (A)',   v26:n.A,v24:o.A,color:'#888780'},
+  ];
+  const maxBar=Math.max(n.homeless,o.homeless);
+  document.getElementById('county-detail').innerHTML=`
+    <div class="county-header">
+      <div>
+        <div class="county-name-lg">${n.name}</div>
+        <div class="county-sub">2025-26 Survey 3 Preliminary vs. 2023-24 Final Survey 5</div>
+      </div>
+      <span class="rate-badge ${rateClass(rate)}">${rate.toFixed(2)}% rate · 25-26 S3</span>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-col">
+        <div class="compare-yr">2025-26 S3 Preliminary</div>
+        <div class="compare-stat"><span class="compare-stat-label">Enrollment</span><span class="compare-stat-val">${fmt(n.total)}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Total homeless</span><span class="compare-stat-val">${fmt(n.homeless)}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Homeless rate</span><span class="compare-stat-val">${(n.homeless/n.total*100).toFixed(2)}%</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Certified UHY (C)</span><span class="compare-stat-val">${n.uhy_c}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">UHY (U)</span><span class="compare-stat-val">${n.uhy_u}</span></div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-yr">2023-24 Final S5</div>
+        <div class="compare-stat"><span class="compare-stat-label">Enrollment</span><span class="compare-stat-val">${fmt(o.total)}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Total homeless</span><span class="compare-stat-val">${fmt(o.homeless)}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Homeless rate</span><span class="compare-stat-val">${(o.homeless/o.total*100).toFixed(2)}%</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Certified UHY (C)</span><span class="compare-stat-val">${o.uhy_c}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">UHY (U)</span><span class="compare-stat-val">${o.uhy_u}</span></div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#888780;margin-bottom:8px;">Nighttime status — solid = 2025-26 S3, faded = 2023-24 Final</div>
+    ${bars.map(b=>`
+      <div class="bar-section">
+        <div class="bar-label">
+          <span>${b.label}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span>${fmt(b.v26)} now · ${fmt(b.v24)} prior</span>
+            <span class="delta ${deltaClass(b.v26-b.v24)}">${deltaText(b.v26,b.v24)}</span>
+          </span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${maxBar>0?(b.v26/maxBar*100).toFixed(1):0}%;background:${b.color};"></div></div>
+        <div class="bar-track"><div class="bar-fill2" style="width:${maxBar>0?(b.v24/maxBar*100).toFixed(1):0}%;background:${b.color};"></div></div>
+      </div>`).join('')}
+    <div class="insight-box">
+      <div class="insight-label">Discussion insight</div>
+      <div class="insight-text">${insights(n,o)}</div>
+    </div>`;
+}
+
+function buildTabs(){
+  const wrap=document.getElementById('ctabs');
+  c2526.forEach((c,i)=>{
+    const btn=document.createElement('button');
+    btn.className='ctab'+(i===0?' active':'');
+    btn.textContent=c.name;
+    btn.onclick=()=>renderDetail(i);
+    wrap.appendChild(btn);
+  });
+}
+
+function buildCharts(){
+  const labels=c2526.map(c=>c.name);
+
+  new Chart(document.getElementById('compareChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'2025-26 S3',data:c2526.map(c=>c.homeless),backgroundColor:'#185FA5'},
+      {label:'2023-24 Final',data:c2324.map(c=>c.homeless),backgroundColor:'#85B7EB'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#888780',font:{size:11},autoSkip:false,maxRotation:35},grid:{display:false}},
+        y:{ticks:{color:'#888780',font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}
+      }
+    }
+  });
+
+  const FL_AVG=parseFloat(FL_RATE_2526.toFixed(2));
+  new Chart(document.getElementById('rateChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Rate %',data:c2526.map(c=>parseFloat((c.homeless/c.total*100).toFixed(2))),backgroundColor:'#185FA5'},
+      {type:'line',label:'FL avg',data:Array(9).fill(FL_AVG),borderColor:'#E24B4A',borderWidth:2,borderDash:[4,3],pointRadius:0,fill:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#888780',font:{size:10},autoSkip:false,maxRotation:35},grid:{display:false}},
+        y:{ticks:{color:'#888780',font:{size:11},callback:v=>v+'%'},grid:{color:'rgba(128,128,128,0.1)'}}
+      }
+    }
+  });
+
+  new Chart(document.getElementById('statusChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Doubling up (B)',data:c2526.map(c=>c.B),backgroundColor:'#185FA5',borderSkipped:false},
+      {label:'Motels (E)',     data:c2526.map(c=>c.E),backgroundColor:'#854F0B',borderSkipped:false},
+      {label:'Other (D)',      data:c2526.map(c=>c.D),backgroundColor:'#BA7517',borderSkipped:false},
+      {label:'Shelters (A)',   data:c2526.map(c=>c.A),backgroundColor:'#888780',borderSkipped:false},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{stacked:true,ticks:{color:'#888780',font:{size:10},autoSkip:false,maxRotation:35},grid:{display:false}},
+        y:{stacked:true,ticks:{color:'#888780',font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}
+      }
+    }
+  });
+}
+
+buildTabs();
+buildMetrics();
+renderDetail(0);
+buildCharts();
+</script>
+
+</body>
+</html>
